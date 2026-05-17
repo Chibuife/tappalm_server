@@ -345,34 +345,19 @@ app.get("/health", (_req, res) =>
 );
 
 /** POST /command – REST fallback (same validation as WS) */
-// app.post("/command", (req, res) => {
-//   const { type, ...data } = req.body ?? {};
-//   if (!commandHandlers[type]) {
-//     return res.status(400).json({ error: `Unknown command: ${type}` });
-//   }
-//   let mcuCmd;
-//   try {
-//     mcuCmd = commandHandlers[type](data);
-//   } catch (err) {
-//     return res.status(400).json({ error: err.message });
-//   }
-//   const sent = sendToMCU(mcuCmd);
-//   res.json({ forwarded: sent, mcuConnected: !!mcuSocket, command: mcuCmd });
-// });
-server.on("upgrade", (request, socket, head) => {
-  const { pathname } = new URL(request.url, `http://${request.headers.host}`);
-
-  if (pathname === "/dashboard") {
-    wsDashboard.handleUpgrade(request, socket, head, (ws) => {
-      wsDashboard.emit("connection", ws, request);
-    });
-  } else if (pathname === "/mcu") {
-    wsMCU.handleUpgrade(request, socket, head, (ws) => {
-      wsMCU.emit("connection", ws, request);
-    });
-  } else {
-    socket.destroy(); // Reject paths that don't match
+app.post("/command", (req, res) => {
+  const { type, ...data } = req.body ?? {};
+  if (!commandHandlers[type]) {
+    return res.status(400).json({ error: `Unknown command: ${type}` });
   }
+  let mcuCmd;
+  try {
+    mcuCmd = commandHandlers[type](data);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+  const sent = sendToMCU(mcuCmd);
+  res.json({ forwarded: sent, mcuConnected: !!mcuSocket, command: mcuCmd });
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
